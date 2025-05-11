@@ -1,72 +1,53 @@
+
 import tkinter as tk
 from tkinter import ttk, messagebox
-import threading
-import time
-from phoenix_api import PhoenixBotAPI
+from phoenix_api import PhoenixBotClient
+import json
 
-class TS93BotApp:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("TS93 Bot - ChatGPT & XaV")
-        self.bot_api = None
+class App(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("TS93 Automator - stworzony przez ChatGPT i XaV")
+        self.geometry("500x300")
+        self.client = None
+
+        ttk.Label(self, text="Adres IP klienta Phoenix Bot:").pack(pady=5)
+        self.ip_entry = ttk.Entry(self)
+        self.ip_entry.insert(0, "127.0.0.1")
+        self.ip_entry.pack(pady=5)
+
+        ttk.Label(self, text="Port klienta Phoenix Bot:").pack(pady=5)
+        self.port_entry = ttk.Entry(self)
+        self.port_entry.insert(0, "12345")
+        self.port_entry.pack(pady=5)
+
         self.auto_repeat = tk.BooleanVar()
-        self.is_running = False
+        ttk.Checkbutton(self, text="Powtarzaj TS automatycznie", variable=self.auto_repeat).pack(pady=5)
 
-        self.build_gui()
+        ttk.Button(self, text="Połącz i rozpocznij", command=self.start).pack(pady=10)
 
-    def build_gui(self):
-        self.client_label = ttk.Label(self.root, text="Wybierz klienta Phoenix Bota:")
-        self.client_label.pack(pady=5)
+    def start(self):
+        ip = self.ip_entry.get()
+        port = int(self.port_entry.get())
 
-        self.client_combo = ttk.Combobox(self.root, values=["Client1", "Client2"], state="readonly")
-        self.client_combo.pack(pady=5)
+        try:
+            self.client = PhoenixBotClient(ip, port)
+            self.client.connect()
 
-        self.connect_button = ttk.Button(self.root, text="Połącz", command=self.connect_to_client)
-        self.connect_button.pack(pady=5)
+            with open("ts93_script.json", "r", encoding="utf-8") as f:
+                steps = json.load(f)["steps"]
 
-        self.start_button = ttk.Button(self.root, text="Uruchom TS 93", command=self.start_ts, state="disabled")
-        self.start_button.pack(pady=5)
+            self.run_steps(steps)
+            if self.auto_repeat.get():
+                self.after(1000, self.start)  # Restartuj po 1s
 
-        self.stop_button = ttk.Button(self.root, text="Zatrzymaj", command=self.stop_ts, state="disabled")
-        self.stop_button.pack(pady=5)
+        except Exception as e:
+            messagebox.showerror("Błąd", str(e))
 
-        self.repeat_check = ttk.Checkbutton(self.root, text="Powtarzaj automatycznie", variable=self.auto_repeat)
-        self.repeat_check.pack(pady=5)
-
-        self.signature = ttk.Label(self.root, text="Skrypt przygotowany przez ChatGPT oraz XaV", font=("Arial", 8))
-        self.signature.pack(side="bottom", pady=5)
-
-    def connect_to_client(self):
-        client = self.client_combo.get()
-        if not client:
-            messagebox.showerror("Błąd", "Wybierz klienta Phoenix Bota.")
-            return
-        self.bot_api = PhoenixBotAPI(client)
-        messagebox.showinfo("Sukces", f"Połączono z {client}")
-        self.start_button.config(state="normal")
-
-    def start_ts(self):
-        if not self.bot_api:
-            messagebox.showerror("Błąd", "Nie połączono z klientem.")
-            return
-
-        self.is_running = True
-        self.stop_button.config(state="normal")
-        threading.Thread(target=self.ts_loop, daemon=True).start()
-
-    def stop_ts(self):
-        self.is_running = False
-        self.stop_button.config(state="disabled")
-
-    def ts_loop(self):
-        while self.is_running:
-            self.bot_api.run_ts93()
-            if not self.auto_repeat.get():
-                break
-            time.sleep(5)
-        self.stop_button.config(state="disabled")
+    def run_steps(self, steps):
+        for step in steps:
+            self.client.send_message(step)
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = TS93BotApp(root)
-    root.mainloop()
+    app = App()
+    app.mainloop()
