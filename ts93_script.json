@@ -1,0 +1,13 @@
+{
+  "steps": [
+    {"action": "use_portal", "params": {"id": 1}},
+    {"action": "kill_mobs", "params": {"zone": "start"}},
+    {"action": "interact_npc", "params": {"name": "Horny Ghost"}},
+    {"action": "use_portal", "params": {"id": 2}},
+    {"action": "kill_mobs", "params": {"zone": "room2"}},
+    {"action": "interact_npc", "params": {"name": "Bombie"}},
+    {"action": "use_portal", "params": {"id": 3}},
+    {"action": "kill_mobs", "params": {"zone": "boss"}},
+    {"action": "interact_npc", "params": {"name": "NPC kończący"}}
+  ]
+}
