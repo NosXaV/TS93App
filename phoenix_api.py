@@ -1,6 +1,7 @@
 
 import socket
 import json
+from pathlib import Path
 
 class PhoenixBotClient:
     def __init__(self, host='127.0.0.1', port=12345):
@@ -19,3 +20,14 @@ class PhoenixBotClient:
     def close(self):
         if self.socket:
             self.socket.close()
+
+def find_phoenix_clients():
+    possible_paths = [
+        Path.home() / "AppData" / "Roaming" / "PhoenixBot" / "PhoenixIPC.json",
+        Path.cwd() / "PhoenixIPC.json"
+    ]
+    for path in possible_paths:
+        if path.exists():
+            with open(path, "r", encoding="utf-8") as f:
+                return json.load(f)
+    return []
